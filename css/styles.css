@@ -24,16 +24,18 @@ body {
 }
 
 .container {
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
-    padding: 2rem;
-    min-height: 100vh;
+    padding: 1rem;
+    height: 100vh;
+    max-height: 100vh;
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 
 header {
-    margin-bottom: 2rem;
+    margin-bottom: 0.75rem;
 }
 
 .header-content {
@@ -113,9 +115,10 @@ header .drag-hint {
 
 main {
     display: flex;
-    flex-direction: column;
-    gap: 2rem;
+    flex-direction: row;
+    gap: 1rem;
     flex: 1;
+    overflow: hidden;
 }
 
 @media (min-width: 768px) {
@@ -126,13 +129,15 @@ main {
 
 .controls {
     background-color: var(--bg-secondary);
-    padding: 1.5rem;
+    padding: 1rem;
     border-radius: 10px;
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
-    flex: 1;
-    max-width: 100%;
+    gap: 1rem;
+    flex: 0 0 320px;
+    width: 320px;
+    max-height: calc(100vh - 100px);
+    overflow-y: auto;
 }
 
 @media (min-width: 768px) {
@@ -342,16 +347,17 @@ input[type="file"] {
 }
 
 .preview-container {
-    flex: 2;
+    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     background-color: var(--bg-secondary);
     border-radius: 10px;
-    padding: 2rem;
+    padding: 1.5rem;
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
+    height: calc(100vh - 100px); /* Fixed height based on viewport */
 }
 
 .preview-container.with-gradient::before {
@@ -767,6 +773,206 @@ footer {
 .secondary-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+/* Title Display Styles */
+.title-options-controls {
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 5px;
+}
+
+.title-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+}
+
+.title-size-control, .title-color-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.title-size-control label, .title-color-control label {
+    min-width: 45px;
+}
+
+.title-size-control input[type="range"] {
+    flex: 1;
+}
+
+#title-size-value {
+    min-width: 40px;
+    text-align: right;
+}
+
+.title-display {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    pointer-events: auto; /* Enable interaction */
+    z-index: 10; /* Start above the device mockup by default */
+}
+
+.title-container {
+    position: absolute;
+    transform-origin: center;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    left: 50%;
+    top: 15%; /* Position at the top by default */
+    transform: translateX(-50%);
+    user-select: none;
+}
+
+.title-text {
+    font-weight: bold; /* Bold text by default */
+    font-size: 36px;
+    white-space: nowrap;
+    color: var(--text-primary);
+    /* Subtle shadow to ensure visibility against all backgrounds */
+    text-shadow: 0 0 2px rgba(255, 255, 255, 0.5);
+}
+
+.title-move-icon {
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    border-radius: 50%;
+    cursor: move;
+    z-index: 20; /* Always keep the move icon above everything */
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    font-size: 14px;
+}
+
+.title-container:hover .title-move-icon {
+    opacity: 1;
+}
+
+.title-move-icon:hover {
+    background-color: var(--accent);
+}
+
+/* Title layer controls */
+.title-layer-options {
+    margin-top: 0.75rem;
+}
+
+.title-layer-control {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.layer-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.layer-btn {
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--border);
+    background-color: var(--bg-secondary);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: all 0.2s ease;
+}
+
+.layer-btn.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background-color: rgba(0, 102, 204, 0.1);
+}
+
+.layer-btn:hover:not(.active) {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.help-text {
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
+/* Canvas Size Presets */
+.canvas-presets {
+    margin-top: 0.5rem;
+}
+
+.preset-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    margin-bottom: 5px;
+}
+
+.canvas-preset {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 2px;
+    border: 1px solid var(--border);
+    background-color: var(--bg-secondary);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.canvas-preset .preset-label {
+    font-weight: bold;
+    font-size: 0.75rem;
+}
+
+.canvas-preset .preset-size {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+}
+
+.canvas-preset:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.canvas-preset.active {
+    border-color: var(--accent);
+    color: var(--accent);
+    background-color: rgba(0, 102, 204, 0.1);
+}
+
+.canvas-dimensions {
+    text-align: center;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+    margin-top: 4px;
+}
+
+.mockup-wrapper {
+    position: absolute;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transform-origin: center center;
+    transition: all 0.3s ease;
+    background-color: rgba(0, 0, 0, 0.03);
+    border-radius: 5px;
+    overflow: hidden;
+    z-index: 1;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
 }
 
 /* Hidden class */

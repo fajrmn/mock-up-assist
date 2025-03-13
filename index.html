@@ -112,6 +112,76 @@
                         </div>
                     </div>
                 </div>
+                
+                <!-- Canvas Size Options -->
+                <div class="canvas-size-options">
+                    <div class="toggle-header">
+                        <h3>Canvas Size</h3>
+                    </div>
+                    <div class="canvas-presets">
+                        <div class="preset-buttons">
+                            <button class="canvas-preset active" data-width="1200" data-height="675" title="1200 × 675 (16:9)">
+                                <span class="preset-label">HD</span>
+                                <span class="preset-size">16:9</span>
+                            </button>
+                            <button class="canvas-preset" data-width="1080" data-height="1080" title="1080 × 1080 (1:1)">
+                                <span class="preset-label">Square</span>
+                                <span class="preset-size">1:1</span>
+                            </button>
+                            <button class="canvas-preset" data-width="1080" data-height="1920" title="1080 × 1920 (9:16)">
+                                <span class="preset-label">Story</span>
+                                <span class="preset-size">9:16</span>
+                            </button>
+                            <button class="canvas-preset" data-width="1600" data-height="900" title="1600 × 900 (16:9)">
+                                <span class="preset-label">HD+</span>
+                                <span class="preset-size">16:9</span>
+                            </button>
+                            <button class="canvas-preset" data-width="1200" data-height="630" title="1200 × 630 (Social)">
+                                <span class="preset-label">Social</span>
+                                <span class="preset-size">1.9:1</span>
+                            </button>
+                            <button class="canvas-preset" data-width="2048" data-height="1152" title="2048 × 1152 (2K)">
+                                <span class="preset-label">2K</span>
+                                <span class="preset-size">16:9</span>
+                            </button>
+                        </div>
+                        <div class="canvas-dimensions">
+                            <span id="canvas-dimensions-display">1200 × 675 px</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Add Title Option -->
+                <div class="title-options">
+                    <div class="toggle-header">
+                        <h3>Add Title</h3>
+                        <div class="switch-toggle">
+                            <input type="checkbox" id="title-toggle" class="toggle-checkbox">
+                            <label for="title-toggle" class="toggle-label">
+                                <span class="toggle-switch"></span>
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div id="title-options" class="title-options-controls hidden">
+                        <div class="input-group">
+                            <label for="mockup-title">Title Text:</label>
+                            <input type="text" id="mockup-title" placeholder="Enter mockup title">
+                        </div>
+                        <div class="title-controls">
+                            <div class="title-size-control">
+                                <label for="title-size">Size:</label>
+                                <input type="range" id="title-size" min="12" max="72" value="36">
+                                <span id="title-size-value">36px</span>
+                            </div>
+                            <div class="title-color-control">
+                                <label for="title-color">Color:</label>
+                                <input type="color" id="title-color" value="#333333">
+                            </div>
+                        </div>
+                        <p class="help-text"><i class="fas fa-info-circle"></i> Click and drag to move the title in the preview</p>
+                    </div>
+                </div>
 
                 <div class="action-buttons">
                     <button id="download-btn" disabled>
@@ -122,6 +192,15 @@
 
             <div class="preview-container">
                 <div class="mockup-wrapper">
+                    <!-- Title element with move icon -->
+                    <div id="title-display" class="title-display hidden">
+                        <div class="title-container" id="title-container">
+                            <div class="title-text" id="title-text">Your Title Here</div>
+                            <div class="title-move-icon" id="title-move-icon">
+                                <i class="fas fa-arrows-alt"></i>
+                            </div>
+                        </div>
+                    </div>
                     <div id="mockup-display" class="iphone">
                         <div class="screen">
                             <div class="placeholder-text">Upload an image to preview</div>

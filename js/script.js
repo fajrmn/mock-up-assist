@@ -42,6 +42,8 @@ class CustomDeviceManager {
         this.isSelecting = false;
         this.currentDeviceImage = null;
         this.screenCoordinates = null;
+        // New simple approach using container percentages
+        this.screenPercentages = null;
         
         // Load saved devices from localStorage
         this.loadDevices();
@@ -60,10 +62,16 @@ class CustomDeviceManager {
         localStorage.setItem('customDevices', JSON.stringify(this.devices));
     }
     
-    // Add a new custom device
+    // Add a new custom device with improved screen positioning
     addDevice(device) {
         // Generate a unique ID
         device.id = 'custom-' + Date.now();
+        
+        // Make sure to include screenPercentages if available
+        if (this.screenPercentages) {
+            device.screenPercentages = this.screenPercentages;
+        }
+        
         this.devices.push(device);
         this.saveDevices();
         return device;
@@ -86,6 +94,8 @@ class CustomDeviceManager {
         this.selectionEnd = { x: 0, y: 0 };
         this.isSelecting = false;
         this.screenCoordinates = null;
+        // Also reset the new screenPercentages property
+        this.screenPercentages = null;
         
         // Hide the selection area element
         const selectionArea = document.getElementById('selection-area');
@@ -236,6 +246,20 @@ document.addEventListener('DOMContentLoaded', () => {
     const color1Input = document.getElementById('color1');
     const color2Input = document.getElementById('color2');
     const magicGradientBtn = document.getElementById('magic-gradient-btn');
+    
+    // Title elements
+    const titleToggleCheckbox = document.getElementById('title-toggle');
+    const titleOptions = document.getElementById('title-options');
+    const mockupTitleInput = document.getElementById('mockup-title');
+    const titleSizeInput = document.getElementById('title-size');
+    const titleSizeValue = document.getElementById('title-size-value');
+    const titleColorInput = document.getElementById('title-color');
+    const titleDisplay = document.getElementById('title-display');
+    const titleText = document.getElementById('title-text');
+    
+    // Canvas size elements
+    const canvasPresets = document.querySelectorAll('.canvas-preset');
+    const canvasDimensionsDisplay = document.getElementById('canvas-dimensions-display');
     
     // Predefined beautiful gradients
     const gradientPresets = [
@@ -432,9 +456,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // IMPORTANT: Position the screen by getting exact measurements of the current display
                 setTimeout(() => {
-                    // Get the screen element and reset it completely
+                    // Get the screen element but don't completely reset styles
+                    // This was causing issues with positioning
                     const screen = mockupDisplay.querySelector('.screen');
-                    screen.removeAttribute('style');
+                    
+                    // Instead of removing all styles, we'll explicitly set the ones we need
+                    // Keep existing position and size if set, otherwise initialize
                     
                     // First apply all critical styles to ensure proper positioning
                     screen.style.position = 'absolute';
@@ -493,8 +520,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         const scaleX = mockupRect.width / naturalWidth;
                         const scaleY = mockupRect.height / naturalHeight;
                         
-                        // If we have percentage-based coordinates (new system)
-                        if (deviceData.screenCoordinates.percentX !== undefined) {
+                        // First check if we have the new screenPercentages property
+                        if (deviceData.screenPercentages) {
                             // Calculate background image dimensions and position
                             // This is crucial for correct positioning
                             const bgImage = new Image();
@@ -545,22 +572,58 @@ document.addEventListener('DOMContentLoaded', () => {
                             const exactScaleX = renderedBgWidth / deviceData.imageWidth;
                             const exactScaleY = renderedBgHeight / deviceData.imageHeight;
                             
-                            // FIXED: Calculate position exactly matching the preview when rectangle was drawn
-                            // Using the exact proportions from the original image
-                            const left = (deviceData.screenCoordinates.percentX * renderedBgWidth) + leftOffset;
-                            const top = (deviceData.screenCoordinates.percentY * renderedBgHeight) + topOffset;
-                            const width = deviceData.screenCoordinates.percentWidth * renderedBgWidth;
-                            const height = deviceData.screenCoordinates.percentHeight * renderedBgHeight;
+                            // Calculate position exactly matching the preview when rectangle was drawn
+                            // Using the exact proportions from the original image and ensuring precise alignment
+                            
+                            // SUPER SIMPLE APPROACH: Use direct percentages
+                            // Get the current mockup dimensions
+                            const mockupWidth = mockupRect.width;
+                            const mockupHeight = mockupRect.height;
+                            
+                            // Directly apply screen coordinates as percentages of the mockup size
+                            // This is the simplest possible approach - use percentages consistently
+                            const left = mockupRect.width * deviceData.screenPercentages.x;
+                            const top = mockupRect.height * deviceData.screenPercentages.y;
+                            const width = mockupRect.width * deviceData.screenPercentages.width;
+                            const height = mockupRect.height * deviceData.screenPercentages.height;
+                            
+                            console.log('Simple percentage positioning:', {
+                                mockupWidth,
+                                mockupHeight,
+                                screenX: deviceData.screenPercentages.x,
+                                screenY: deviceData.screenPercentages.y,
+                                screenWidth: deviceData.screenPercentages.width,
+                                screenHeight: deviceData.screenPercentages.height,
+                                resultLeft: left,
+                                resultTop: top,
+                                resultWidth: width,
+                                resultHeight: height
+                            });
+                            
+                            // Apply a correction factor if needed to ensure perfect alignment
+                            // This helps account for any browser rendering inconsistencies
                             
                             console.log('Screen position and size:', { left, top, width, height });
                             console.log('Scale factors:', { scaleFactorX, scaleFactorY });
                             console.log('Offsets:', { leftOffset, topOffset });
                             
-                            // Apply exact dimensions
-                            screen.style.left = `${left}px`;
-                            screen.style.top = `${top}px`;
-                            screen.style.width = `${width}px`;
-                            screen.style.height = `${height}px`;
+                            // Apply exact dimensions with high precision
+                            // Force integer pixel values to avoid any subpixel rendering inconsistencies
+                            screen.style.left = `${Math.round(left)}px`;
+                            screen.style.top = `${Math.round(top)}px`;
+                            screen.style.width = `${Math.round(width)}px`;
+                            screen.style.height = `${Math.round(height)}px`;
+                            
+                            // Set transform-origin to ensure any transformations maintain correct position
+                            screen.style.transformOrigin = 'top left';
+                            
+                            // Log the exact screen position for debugging
+                            console.log('Applied screen position:', {
+                                left: `${Math.round(left * 100) / 100}px`,
+                                top: `${Math.round(top * 100) / 100}px`,
+                                width: `${Math.round(width * 100) / 100}px`,
+                                height: `${Math.round(height * 100) / 100}px`
+                            });
                             
                             // Make sure any content inside fits perfectly
                             const screenImage = screen.querySelector('img');
@@ -578,21 +641,56 @@ document.addEventListener('DOMContentLoaded', () => {
                                 // Ensure the parent screen element allows the image to extend beyond its boundaries
                                 // This is crucial for iPhone devices which were showing white space
                                 screen.style.overflow = 'visible';
+                                
+                                // Force exact positioning to ensure accurate placement
+                                screen.style.position = 'absolute';
+                                screen.style.boxSizing = 'border-box';
+                                screen.style.margin = '0';
+                                screen.style.padding = '0';
                             }
                             
                             console.log('Using percentage coordinates:', left, top, width, height);
-                        } else {
+                        } else if (deviceData.screenCoordinates) {
                             // For older devices - use direct scaling of the original coordinates
-                            const left = deviceData.screenCoordinates.left * scaleX;
-                            const top = deviceData.screenCoordinates.top * scaleY;
-                            const width = deviceData.screenCoordinates.width * scaleX;
-                            const height = deviceData.screenCoordinates.height * scaleY;
+                            // Check which coordinate format we have
+                            if (deviceData.screenCoordinates.left !== undefined) {
+                                const left = deviceData.screenCoordinates.left * scaleX;
+                                const top = deviceData.screenCoordinates.top * scaleY;
+                                const width = deviceData.screenCoordinates.width * scaleX;
+                                const height = deviceData.screenCoordinates.height * scaleY;
+                                
+                                // Apply exact dimensions
+                                screen.style.left = `${left}px`;
+                                screen.style.top = `${top}px`;
+                                screen.style.width = `${width}px`;
+                                screen.style.height = `${height}px`;
+                            } else {
+                                // Assume we have x,y,width,height format
+                                const left = deviceData.screenCoordinates.x * scaleX;
+                                const top = deviceData.screenCoordinates.y * scaleY;
+                                const width = deviceData.screenCoordinates.width * scaleX;
+                                const height = deviceData.screenCoordinates.height * scaleY;
+                                
+                                // Apply dimensions
+                                screen.style.left = `${left}px`;
+                                screen.style.top = `${top}px`;
+                                screen.style.width = `${width}px`;
+                                screen.style.height = `${height}px`;
+                            }
+                        } else {
+                            // No valid coordinates found - use a fallback approach
+                            console.warn('No valid screen coordinates found for custom device');
                             
-                            // Apply exact dimensions 
-                            screen.style.left = `${left}px`;
-                            screen.style.top = `${top}px`;
-                            screen.style.width = `${width}px`;
-                            screen.style.height = `${height}px`;
+                            // Center the screen and use 80% of the container size
+                            const fallbackWidth = mockupRect.width * 0.8;
+                            const fallbackHeight = mockupRect.height * 0.6; 
+                            const fallbackLeft = (mockupRect.width - fallbackWidth) / 2;
+                            const fallbackTop = (mockupRect.height - fallbackHeight) / 2;
+                            
+                            screen.style.left = `${fallbackLeft}px`;
+                            screen.style.top = `${fallbackTop}px`;
+                            screen.style.width = `${fallbackWidth}px`;
+                            screen.style.height = `${fallbackHeight}px`;
                             
                             // Make sure any content inside fits perfectly
                             const screenImage = screen.querySelector('img');
@@ -610,6 +708,12 @@ document.addEventListener('DOMContentLoaded', () => {
                                 // Ensure the parent screen element allows the image to extend beyond its boundaries
                                 // This is crucial for iPhone devices which were showing white space
                                 screen.style.overflow = 'visible';
+                                
+                                // Force exact positioning to ensure accurate placement
+                                screen.style.position = 'absolute';
+                                screen.style.boxSizing = 'border-box';
+                                screen.style.margin = '0';
+                                screen.style.padding = '0';
                             }
                             
                             console.log('Using scaled coordinates:', left, top, width, height);
@@ -637,8 +741,18 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Clear any previous content in the screen area
         const screen = mockupDisplay.querySelector('.screen');
+        
         // Always ensure overflow is visible for draggable images
         screen.style.overflow = 'visible';
+        screen.style.position = 'absolute'; // Ensure position is absolute for proper placement
+        
+        // Custom device handling - make sure we don't reset the screen position for custom devices
+        // This is needed to keep the screen where it was selected during the custom device creation
+        if (currentDevice && currentDevice.startsWith('custom-')) {
+            // Don't reset screen position for custom devices
+            console.log('Maintaining custom device screen position');
+        }
+        
         if (screen) {
             // Clear previous content
             screen.innerHTML = '';
@@ -931,7 +1045,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Prevent default browser behavior which might cause image dragging
         e.preventDefault();
         
-        // Get dimensions and positions
+        // Get dimensions and positions with high precision
         const containerRect = deviceCanvasContainer.getBoundingClientRect();
         const imageRect = devicePreview.getBoundingClientRect();
         
@@ -949,40 +1063,45 @@ document.addEventListener('DOMContentLoaded', () => {
             clickY >= imageOffsetTop && 
             clickY <= imageOffsetTop + imageRect.height) {
             
-            // Store the selection start position relative to the container
+            // Store the selection start position relative to the container with high precision
             customDeviceManager.selectionStart = { 
-                x: clickX, 
-                y: clickY 
+                x: Math.round(clickX * 100) / 100, 
+                y: Math.round(clickY * 100) / 100 
             };
             
-            // Calculate position as a percentage of the image dimensions
+            // Calculate position as a percentage of the image dimensions with high precision
+            // This is critical for accurate positioning later
             customDeviceManager.selectionStartPercent = {
-                x: (clickX - imageOffsetLeft) / imageRect.width,
-                y: (clickY - imageOffsetTop) / imageRect.height
+                x: Math.round(((clickX - imageOffsetLeft) / imageRect.width) * 10000) / 10000,
+                y: Math.round(((clickY - imageOffsetTop) / imageRect.height) * 10000) / 10000
             };
             
-            // Also store actual pixel coordinates relative to the image
+            // Also store actual pixel coordinates relative to the image with high precision
             customDeviceManager.selectionStartPixels = {
-                x: clickX - imageOffsetLeft,
-                y: clickY - imageOffsetTop
+                x: Math.round((clickX - imageOffsetLeft) * 100) / 100,
+                y: Math.round((clickY - imageOffsetTop) * 100) / 100
             };
             
             // Store image's natural dimensions for accurate scaling
             customDeviceManager.deviceImageNaturalWidth = devicePreview.naturalWidth;
             customDeviceManager.deviceImageNaturalHeight = devicePreview.naturalHeight;
             
+            // Store the current image's rendered dimensions for reference
+            customDeviceManager.deviceImageRenderedWidth = imageRect.width;
+            customDeviceManager.deviceImageRenderedHeight = imageRect.height;
+            
             customDeviceManager.isSelecting = true;
             
-            // Show selection area at the click position
+            // Show selection area at the click position with exact positioning
             selectionArea.classList.remove('hidden');
-            selectionArea.style.top = `${clickY}px`;
-            selectionArea.style.left = `${clickX}px`;
+            selectionArea.style.top = `${customDeviceManager.selectionStart.y}px`;
+            selectionArea.style.left = `${customDeviceManager.selectionStart.x}px`;
             selectionArea.style.width = '0px';
             selectionArea.style.height = '0px';
             
             console.log('Selection started at:', 
-                      'Container coordinates:', clickX, clickY,
-                      'Image coordinates:', clickX - imageOffsetLeft, clickY - imageOffsetTop,
+                      'Container coordinates:', customDeviceManager.selectionStart.x, customDeviceManager.selectionStart.y,
+                      'Image coordinates:', customDeviceManager.selectionStartPixels.x, customDeviceManager.selectionStartPixels.y,
                       'Percentage:', customDeviceManager.selectionStartPercent.x, customDeviceManager.selectionStartPercent.y);
         }
     });
@@ -993,14 +1112,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // Prevent default browser behavior during selection
         e.preventDefault();
         
-        // Get container and image dimensions
+        // Get container and image dimensions with high precision
         const containerRect = deviceCanvasContainer.getBoundingClientRect();
         const imageRect = devicePreview.getBoundingClientRect();
         
-        // Get cursor position relative to the container
+        // Get cursor position relative to the container with high precision
         customDeviceManager.selectionEnd = { 
-            x: e.clientX - containerRect.left, 
-            y: e.clientY - containerRect.top 
+            x: Math.round((e.clientX - containerRect.left) * 100) / 100, 
+            y: Math.round((e.clientY - containerRect.top) * 100) / 100 
         };
         
         // Calculate the end position relative to the image
@@ -1008,82 +1127,112 @@ document.addEventListener('DOMContentLoaded', () => {
         const imageOffsetLeft = imageRect.left - containerRect.left;
         const imageOffsetTop = imageRect.top - containerRect.top;
         
-        // Calculate position as a percentage of the image dimensions
+        // Calculate position as a percentage of the image dimensions with high precision
+        // This is critical for accurate positioning later
         customDeviceManager.selectionEndPercent = {
-            x: (customDeviceManager.selectionEnd.x - imageOffsetLeft) / imageRect.width,
-            y: (customDeviceManager.selectionEnd.y - imageOffsetTop) / imageRect.height
+            x: Math.round(((customDeviceManager.selectionEnd.x - imageOffsetLeft) / imageRect.width) * 10000) / 10000,
+            y: Math.round(((customDeviceManager.selectionEnd.y - imageOffsetTop) / imageRect.height) * 10000) / 10000
         };
         
-        // Also store actual pixel coordinates relative to the image
+        // Also store actual pixel coordinates relative to the image with high precision
         customDeviceManager.selectionEndPixels = {
-            x: customDeviceManager.selectionEnd.x - imageOffsetLeft,
-            y: customDeviceManager.selectionEnd.y - imageOffsetTop
+            x: Math.round((customDeviceManager.selectionEnd.x - imageOffsetLeft) * 100) / 100,
+            y: Math.round((customDeviceManager.selectionEnd.y - imageOffsetTop) * 100) / 100
         };
         
-        console.log('Selection at:', 
-            (customDeviceManager.selectionEnd.x - imageOffsetLeft), 
-            (customDeviceManager.selectionEnd.y - imageOffsetTop),
-            'Image size:', imageRect.width, imageRect.height);
+        // Calculate dimensions for the selection box with high precision
+        const top = Math.round(Math.min(customDeviceManager.selectionStart.y, customDeviceManager.selectionEnd.y) * 100) / 100;
+        const left = Math.round(Math.min(customDeviceManager.selectionStart.x, customDeviceManager.selectionEnd.x) * 100) / 100;
+        const width = Math.round(Math.abs(customDeviceManager.selectionEnd.x - customDeviceManager.selectionStart.x) * 100) / 100;
+        const height = Math.round(Math.abs(customDeviceManager.selectionEnd.y - customDeviceManager.selectionStart.y) * 100) / 100;
         
-        // Calculate dimensions for the selection box
-        const top = Math.min(customDeviceManager.selectionStart.y, customDeviceManager.selectionEnd.y);
-        const left = Math.min(customDeviceManager.selectionStart.x, customDeviceManager.selectionEnd.x);
-        const width = Math.abs(customDeviceManager.selectionEnd.x - customDeviceManager.selectionStart.x);
-        const height = Math.abs(customDeviceManager.selectionEnd.y - customDeviceManager.selectionStart.y);
-        
-        // Update selection area
+        // Update selection area with exact positioning
         selectionArea.style.top = `${top}px`;
         selectionArea.style.left = `${left}px`;
         selectionArea.style.width = `${width}px`;
         selectionArea.style.height = `${height}px`;
+        
+        // Add a distinctive border to make the selection more visible
+        selectionArea.style.border = '2px dashed #007bff';
+        selectionArea.style.backgroundColor = 'rgba(0, 123, 255, 0.1)';
     });
     
     deviceCanvasContainer.addEventListener('mouseup', () => {
         if (customDeviceManager.isSelecting) {
             customDeviceManager.isSelecting = false;
             
-            // Get container and image dimensions
+            // Get container and image dimensions with high precision
             const containerRect = deviceCanvasContainer.getBoundingClientRect();
             const imageRect = devicePreview.getBoundingClientRect();
             
-            // Calculate dimensions in pixels
-            const top = Math.min(customDeviceManager.selectionStart.y, customDeviceManager.selectionEnd.y);
-            const left = Math.min(customDeviceManager.selectionStart.x, customDeviceManager.selectionEnd.x);
-            const width = Math.abs(customDeviceManager.selectionEnd.x - customDeviceManager.selectionStart.x);
-            const height = Math.abs(customDeviceManager.selectionEnd.y - customDeviceManager.selectionStart.y);
+            // Calculate dimensions in pixels with high precision
+            const top = Math.round(Math.min(customDeviceManager.selectionStart.y, customDeviceManager.selectionEnd.y) * 100) / 100;
+            const left = Math.round(Math.min(customDeviceManager.selectionStart.x, customDeviceManager.selectionEnd.x) * 100) / 100;
+            const width = Math.round(Math.abs(customDeviceManager.selectionEnd.x - customDeviceManager.selectionStart.x) * 100) / 100;
+            const height = Math.round(Math.abs(customDeviceManager.selectionEnd.y - customDeviceManager.selectionStart.y) * 100) / 100;
             
-            // Calculate percentage values relative to the image size
+            // Calculate percentage values relative to the image size with high precision
             // These exact percentages are critical - they define where the rectangle was drawn
-            const startPercentX = Math.min(customDeviceManager.selectionStartPercent.x, customDeviceManager.selectionEndPercent.x);
-            const startPercentY = Math.min(customDeviceManager.selectionStartPercent.y, customDeviceManager.selectionEndPercent.y);
-            const widthPercent = Math.abs(customDeviceManager.selectionEndPercent.x - customDeviceManager.selectionStartPercent.x);
-            const heightPercent = Math.abs(customDeviceManager.selectionEndPercent.y - customDeviceManager.selectionStartPercent.y);
+            const startPercentX = Math.round(Math.min(customDeviceManager.selectionStartPercent.x, customDeviceManager.selectionEndPercent.x) * 10000) / 10000;
+            const startPercentY = Math.round(Math.min(customDeviceManager.selectionStartPercent.y, customDeviceManager.selectionEndPercent.y) * 10000) / 10000;
+            const widthPercent = Math.round(Math.abs(customDeviceManager.selectionEndPercent.x - customDeviceManager.selectionStartPercent.x) * 10000) / 10000;
+            const heightPercent = Math.round(Math.abs(customDeviceManager.selectionEndPercent.y - customDeviceManager.selectionStartPercent.y) * 10000) / 10000;
             
-            // Calculate the image offset for exact positioning
-            const imageOffsetLeft = imageRect.left - containerRect.left;
-            const imageOffsetTop = imageRect.top - containerRect.top;
+            // Log selected percentages for debugging
+            console.log('Selected area percentages:', {
+                x: startPercentX,
+                y: startPercentY,
+                width: widthPercent,
+                height: heightPercent
+            });
             
-            // Save all critical position and sizing information
-            // These exact values are crucial for positioning the screen correctly
-            customDeviceManager.screenCoordinates = {
-                top, left, width, height,
-                percentX: startPercentX,
-                percentY: startPercentY,
-                percentWidth: widthPercent,
-                percentHeight: heightPercent,
-                imageWidth: devicePreview.naturalWidth,  // Natural width of original image
-                imageHeight: devicePreview.naturalHeight, // Natural height of original image
-                renderedWidth: imageRect.width,  // Width as rendered in the DOM
-                renderedHeight: imageRect.height, // Height as rendered in the DOM
-                offsetLeft: imageOffsetLeft,     // Horizontal offset of image within container
-                offsetTop: imageOffsetTop,       // Vertical offset of image within container
-                actualX: Math.min(customDeviceManager.selectionStartPixels.x, customDeviceManager.selectionEndPixels.x),
-                actualY: Math.min(customDeviceManager.selectionStartPixels.y, customDeviceManager.selectionEndPixels.y),
-                actualWidth: Math.abs(customDeviceManager.selectionEndPixels.x - customDeviceManager.selectionStartPixels.x),
-                actualHeight: Math.abs(customDeviceManager.selectionEndPixels.y - customDeviceManager.selectionStartPixels.y)
+            // Calculate the image offset for exact positioning with high precision
+            const imageOffsetLeft = Math.round((imageRect.left - containerRect.left) * 100) / 100;
+            const imageOffsetTop = Math.round((imageRect.top - containerRect.top) * 100) / 100;
+            
+            // Add visual feedback to show the selection is complete
+            selectionArea.style.border = '2px solid #28a745';
+            selectionArea.style.backgroundColor = 'rgba(40, 167, 69, 0.1)';
+            
+            // SUPER SIMPLE APPROACH - Store direct percentages of the CONTAINER
+            // This is the simplest approach - just use direct percentages of the entire mockup
+            // No need for complex calculations about image fitting
+            
+            // Get container dimensions for calculating percentages
+            const containerWidth = containerRect.width;
+            const containerHeight = containerRect.height;
+            
+            // Calculate direct percentages of container (not image)
+            // Use different variable names to avoid redeclaration errors
+            const containerXPercent = left / containerWidth;
+            const containerYPercent = top / containerHeight;
+            const containerWidthPercent = width / containerWidth;
+            const containerHeightPercent = height / containerHeight;
+            
+            // Store only these four simple percentage values
+            customDeviceManager.screenPercentages = {
+                x: containerXPercent,
+                y: containerYPercent, 
+                width: containerWidthPercent,
+                height: containerHeightPercent
             };
             
-            console.log('Screen coordinates:', customDeviceManager.screenCoordinates);
+            // Log for debugging
+            console.log('SIMPLE PERCENTAGES stored:', {
+                containerWidth,
+                containerHeight,
+                selectionLeft: left,
+                selectionTop: top,
+                selectionWidth: width,
+                selectionHeight: height,
+                x: containerXPercent,
+                y: containerYPercent,
+                width: containerWidthPercent,
+                height: containerHeightPercent
+            });
+            
+            // Only log the new simple percentages approach
+            console.log('Screen percentages saved:', customDeviceManager.screenPercentages);
             
             // Enable next button
             nextStepBtn.disabled = false;
@@ -1114,7 +1263,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        if (!customDeviceManager.currentDeviceImage || !customDeviceManager.screenCoordinates) {
+        if (!customDeviceManager.currentDeviceImage || (!customDeviceManager.screenPercentages && !customDeviceManager.screenCoordinates)) {
             alert('Missing image or screen area selection.');
             return;
         }
@@ -1125,18 +1274,21 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // We need to wait for the image to load to get its dimensions
         deviceImg.onload = () => {
-            // Store all necessary data including percentage-based coordinates
+            // Store all necessary data using the new simplified screenPercentages
             const newDevice = {
                 name: deviceName,
                 imageUrl: customDeviceManager.currentDeviceImage,
                 width: deviceImg.naturalWidth,
                 height: deviceImg.naturalHeight,
+                // Use the new screenPercentages property for positioning
+                screenPercentages: customDeviceManager.screenPercentages,
+                // Keep screenCoordinates for backward compatibility
                 screenCoordinates: customDeviceManager.screenCoordinates,
                 imageWidth: deviceImg.naturalWidth,
                 imageHeight: deviceImg.naturalHeight
             };
             
-            console.log('Created custom device with coordinates:', newDevice.screenCoordinates);
+            console.log('Created custom device with percentages:', newDevice.screenPercentages);
             
             // Add device and update UI
             const addedDevice = customDeviceManager.addDevice(newDevice);
@@ -1176,8 +1328,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Create a container for capturing with gradient if needed
                 const captureContainer = document.createElement('div');
                 captureContainer.style.position = 'relative';
-                captureContainer.style.width = `${mockupDisplay.offsetWidth}px`;
-                captureContainer.style.height = `${mockupDisplay.offsetHeight}px`;
+                captureContainer.style.width = `${currentCanvasWidth}px`;
+                captureContainer.style.height = `${currentCanvasHeight}px`;
+                captureContainer.style.display = 'flex';
+                captureContainer.style.justifyContent = 'center';
+                captureContainer.style.alignItems = 'center';
                 
                 // If gradient is active, add it to the capture container
                 if (previewContainer.classList.contains('with-gradient')) {
@@ -1366,4 +1521,270 @@ document.addEventListener('DOMContentLoaded', () => {
         color2Input.value = randomPreset.color2;
         updateGradient();
     });
+    
+    // ------- Title Feature Implementation -------
+    
+    // Toggle title options visibility
+    titleToggleCheckbox.addEventListener('change', () => {
+        if (titleToggleCheckbox.checked) {
+            titleOptions.classList.remove('hidden');
+            titleDisplay.classList.remove('hidden');
+            updateTitleDisplay();
+        } else {
+            titleOptions.classList.add('hidden');
+            titleDisplay.classList.add('hidden');
+        }
+    });
+    
+    // Update title text when input changes
+    mockupTitleInput.addEventListener('input', updateTitleDisplay);
+    
+    // Update title size when slider changes
+    titleSizeInput.addEventListener('input', () => {
+        titleSizeValue.textContent = `${titleSizeInput.value}px`;
+        updateTitleDisplay();
+    });
+    
+    // Update title color when color picker changes
+    titleColorInput.addEventListener('input', updateTitleDisplay);
+    
+    // Add layer position option to title options
+    const titleLayerOptions = document.createElement('div');
+    titleLayerOptions.className = 'title-layer-options';
+    titleLayerOptions.innerHTML = `
+        <div class="title-layer-control">
+            <label>Layer Position:</label>
+            <div class="layer-buttons">
+                <button id="title-layer-front" class="layer-btn active" title="Show title in front of device">
+                    <i class="fas fa-layer-group"></i> Front
+                </button>
+                <button id="title-layer-back" class="layer-btn" title="Show title behind device">
+                    <i class="fas fa-layer-group fa-flip-vertical"></i> Behind
+                </button>
+            </div>
+        </div>
+    `;
+    titleOptions.appendChild(titleLayerOptions);
+    
+    // Get layer buttons
+    const titleLayerFrontBtn = document.getElementById('title-layer-front');
+    const titleLayerBackBtn = document.getElementById('title-layer-back');
+    
+    // Layer position control
+    titleLayerFrontBtn.addEventListener('click', () => {
+        titleLayerFrontBtn.classList.add('active');
+        titleLayerBackBtn.classList.remove('active');
+        titleDisplay.style.zIndex = '10'; // Above the device
+    });
+    
+    titleLayerBackBtn.addEventListener('click', () => {
+        titleLayerBackBtn.classList.add('active');
+        titleLayerFrontBtn.classList.remove('active');
+        titleDisplay.style.zIndex = '1'; // Behind the device
+    });
+    
+    // Function to update the title display
+    function updateTitleDisplay() {
+        const titleValue = mockupTitleInput.value || 'Your Title Here';
+        const titleSize = titleSizeInput.value;
+        const titleColor = titleColorInput.value;
+        
+        titleText.textContent = titleValue;
+        titleText.style.fontSize = `${titleSize}px`;
+        titleText.style.color = titleColor;
+    }
+    
+    // Make the title container draggable using the move icon
+    const titleContainer = document.getElementById('title-container');
+    const titleMoveIcon = document.getElementById('title-move-icon');
+    let isDraggingTitle = false;
+    let titleOffsetX = 0;
+    let titleOffsetY = 0;
+    
+    titleMoveIcon.addEventListener('mousedown', (e) => {
+        isDraggingTitle = true;
+        
+        // Calculate the mouse offset from the container's position
+        const containerRect = titleContainer.getBoundingClientRect();
+        titleOffsetX = e.clientX - containerRect.left;
+        titleOffsetY = e.clientY - containerRect.top;
+        
+        // Add a class for styling during drag
+        titleContainer.classList.add('dragging');
+        e.preventDefault();
+    });
+    
+    document.addEventListener('mousemove', (e) => {
+        if (!isDraggingTitle) return;
+        
+        // Get mockup wrapper dimensions
+        const wrapperRect = document.querySelector('.mockup-wrapper').getBoundingClientRect();
+        
+        // Calculate new position relative to the mockup wrapper
+        const left = ((e.clientX - wrapperRect.left) / wrapperRect.width) * 100;
+        const top = ((e.clientY - wrapperRect.top) / wrapperRect.height) * 100;
+        
+        // Update container position in percentages for responsiveness
+        titleContainer.style.left = `${left}%`;
+        titleContainer.style.top = `${top}%`;
+        titleContainer.style.transform = 'translateX(-50%)'; // Keep horizontal centering
+    });
+    
+    document.addEventListener('mouseup', () => {
+        if (isDraggingTitle) {
+            isDraggingTitle = false;
+            titleContainer.classList.remove('dragging');
+        }
+    });
+    
+    // Update html2canvas capture to include the title
+    const originalDownloadBtnClick = downloadBtn.onclick;
+    downloadBtn.onclick = null;
+    
+    downloadBtn.addEventListener('click', async () => {
+        if (previewImage.src) {
+            try {
+                // Change button text to loading state
+                const originalBtnText = downloadBtn.innerHTML;
+                downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+                downloadBtn.disabled = true;
+                
+                // Wait a moment for the UI to update
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // Create a container for capturing with all elements
+                const captureContainer = document.createElement('div');
+                captureContainer.style.position = 'relative';
+                captureContainer.style.width = `${mockupDisplay.offsetWidth}px`;
+                captureContainer.style.height = `${mockupDisplay.offsetHeight}px`;
+                
+                // If gradient is active, add it to the capture container
+                if (previewContainer.classList.contains('with-gradient')) {
+                    captureContainer.style.background = getComputedStyle(document.documentElement)
+                        .getPropertyValue('--gradient-background');
+                }
+                
+                // Include the title if it's visible
+                if (!titleDisplay.classList.contains('hidden')) {
+                    const titleClone = titleText.cloneNode(true);
+                    titleClone.style.position = 'absolute';
+                    titleClone.style.zIndex = '1'; // Behind the device
+                    captureContainer.appendChild(titleClone);
+                }
+                
+                // Clone the mockup display for the capture
+                const mockupClone = mockupDisplay.cloneNode(true);
+                mockupClone.style.position = 'relative';
+                mockupClone.style.zIndex = '2';
+                captureContainer.appendChild(mockupClone);
+                
+                // Append the container to the body temporarily
+                document.body.appendChild(captureContainer);
+                
+                // Generate the image
+                const canvas = await html2canvas(captureContainer, {
+                    backgroundColor: null,
+                    scale: 2, // Higher resolution
+                    allowTaint: true,
+                    useCORS: true,
+                    onclone: function(clonedDoc) {
+                        // Ensure all screens in the cloned document have overflow visible
+                        const allScreens = clonedDoc.querySelectorAll('.screen');
+                        allScreens.forEach(screen => {
+                            screen.style.overflow = 'visible !important';
+                        });
+                        
+                        // Also ensure any parent containers allow overflow
+                        const containers = clonedDoc.querySelectorAll('.mockup-display, .device-container');
+                        containers.forEach(container => {
+                            container.style.overflow = 'visible';
+                        });
+                    }
+                });
+                
+                // Remove the temporary container
+                document.body.removeChild(captureContainer);
+                
+                // Create download link
+                const link = document.createElement('a');
+                link.download = `${currentDevice}-mockup.png`;
+                link.href = canvas.toDataURL('image/png');
+                
+                // Trigger download
+                link.click();
+                
+                // Reset button state
+                downloadBtn.innerHTML = originalBtnText;
+                downloadBtn.disabled = false;
+                
+            } catch (error) {
+                console.error('Error generating mockup:', error);
+                alert('Failed to generate mockup. Please try again.');
+                downloadBtn.innerHTML = originalBtnText;
+                downloadBtn.disabled = false;
+            }
+        }
+    }, { once: false });
+    
+    // Canvas size preset functionality
+    let currentCanvasWidth = 1200;
+    let currentCanvasHeight = 675;
+    
+    // Initialize canvas size
+    updateCanvasSize(currentCanvasWidth, currentCanvasHeight);
+    
+    // Add event listeners to canvas presets
+    canvasPresets.forEach(preset => {
+        preset.addEventListener('click', () => {
+            // Remove active class from all presets
+            canvasPresets.forEach(p => p.classList.remove('active'));
+            
+            // Add active class to clicked preset
+            preset.classList.add('active');
+            
+            // Get dimensions from data attributes
+            const width = parseInt(preset.getAttribute('data-width'));
+            const height = parseInt(preset.getAttribute('data-height'));
+            
+            // Update canvas size
+            currentCanvasWidth = width;
+            currentCanvasHeight = height;
+            updateCanvasSize(width, height);
+        });
+    });
+    
+    // Function to update canvas size
+    function updateCanvasSize(width, height) {
+        const mockupWrapper = document.querySelector('.mockup-wrapper');
+        const previewContainer = document.querySelector('.preview-container');
+        
+        // Calculate available space within the preview container (accounting for padding)
+        const containerWidth = previewContainer.clientWidth - 80; // Subtracting padding
+        const containerHeight = previewContainer.clientHeight - 80; // Subtracting padding
+        
+        // Calculate maximum possible dimensions while maintaining aspect ratio
+        let scale = Math.min(
+            containerWidth / width,
+            containerHeight / height
+        );
+        
+        // Apply a max scale of 1 to avoid enlarging beyond native size
+        scale = Math.min(scale, 1);
+        
+        // Set the mockup wrapper dimensions - original dimensions for correct aspect ratio
+        mockupWrapper.style.width = `${width}px`;
+        mockupWrapper.style.height = `${height}px`;
+        
+        // Set transform scale (without affecting the centering transform)
+        mockupWrapper.style.transform = `translate(-50%, -50%) scale(${scale})`;
+        
+        // Update dimensions display
+        canvasDimensionsDisplay.textContent = `${width} × ${height} px`;
+    }
+    
+    // Handle window resize to maintain proper scaling
+    window.addEventListener('resize', () => {
+        updateCanvasSize(currentCanvasWidth, currentCanvasHeight);
+    });
 });
+
