@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Mockup Builder</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-content">
+                <div>
+                    <h1>Device Mockup Builder</h1>
+                    <p>Upload your design and create beautiful device mockups</p>
+                    <p class="drag-hint"><i class="fas fa-info-circle"></i> Drag and drop an image on the preview space only</p>
+                </div>
+                <div class="theme-switcher">
+                    <button id="theme-toggle" aria-label="Toggle dark/light mode">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <main>
+            <div class="controls">
+                <div class="upload-container">
+                    <label for="image-upload" class="upload-btn">
+                        <i class="fas fa-upload"></i> Upload Image
+                    </label>
+                    <input type="file" id="image-upload" accept="image/*">
+                    <button id="remove-btn" class="hidden">
+                        <i class="fas fa-trash-alt"></i> Remove Image
+                    </button>
+                </div>
+
+                <div class="device-selector">
+                    <h3>Select Device</h3>
+                    <div class="device-tabs">
+                        <button id="devices-tab" class="tab-btn active">Devices</button>
+                        <button id="custom-devices-tab" class="tab-btn">Custom Devices</button>
+                    </div>
+                    
+                    <div id="devices-panel" class="tab-panel active">
+                        <div class="devices" id="device-buttons">
+                            <button class="device-btn active" data-device="iphone">
+                                <i class="fas fa-mobile-alt"></i> iPhone
+                            </button>
+                            <button class="device-btn" data-device="ipad">
+                                <i class="fas fa-tablet-alt"></i> iPad
+                            </button>
+                            <button class="device-btn" data-device="macbook">
+                                <i class="fas fa-laptop"></i> MacBook
+                            </button>
+                            <button class="device-btn" data-device="imac">
+                                <i class="fas fa-desktop"></i> iMac
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="custom-devices-panel" class="tab-panel">
+                        <div class="devices" id="custom-device-buttons">
+                            <!-- Custom devices will be added here dynamically -->
+                            <div class="no-custom-devices-message">No custom devices added yet.</div>
+                        </div>
+                        <div class="custom-device-control">
+                            <button id="add-custom-device-btn" class="secondary-btn">
+                                <i class="fas fa-plus"></i> Add Custom Device
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="border-toggle">
+                    <div class="toggle-header">
+                        <h3>Device Color</h3>
+                        <div class="switch-toggle">
+                            <input type="checkbox" id="border-toggle" class="toggle-checkbox">
+                            <label for="border-toggle" class="toggle-label">
+                                <span class="toggle-switch"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="background-options">
+                    <div class="toggle-header">
+                        <h3>Background</h3>
+                        <div class="switch-toggle">
+                            <input type="checkbox" id="background-toggle" class="toggle-checkbox">
+                            <label for="background-toggle" class="toggle-label">
+                                <span class="toggle-switch"></span>
+                            </label>
+                            <button id="magic-gradient-btn" class="magic-btn" title="Generate random gradient">
+                                <i class="fas fa-magic"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="gradient-options" class="gradient-options hidden">
+                        <div class="color-pickers">
+                            <div class="color-picker">
+                                <label for="color1">Color 1</label>
+                                <input type="color" id="color1" value="#4158D0">
+                            </div>
+                            <div class="color-picker">
+                                <label for="color2">Color 2</label>
+                                <input type="color" id="color2" value="#50C9C3">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button id="download-btn" disabled>
+                        <i class="fas fa-download"></i> Download Mockup
+                    </button>
+                </div>
+            </div>
+
+            <div class="preview-container">
+                <div class="mockup-wrapper">
+                    <div id="mockup-display" class="iphone">
+                        <div class="screen">
+                            <div class="placeholder-text">Upload an image to preview</div>
+                            <img id="preview-image" src="" alt="">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Device Mockup Builder. All rights reserved.</p>
+        </footer>
+    </div>
+
+    <!-- Custom Device Modal -->    
+    <div id="custom-device-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Create Custom Device</h2>
+                <button id="close-modal" class="close-btn">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="custom-device-steps">
+                    <div class="step active" id="step-1">
+                        <h3>Step 1: Upload Device Image</h3>
+                        <p>Upload an image of the device you want to create a mockup for.</p>
+                        <div class="upload-container">
+                            <label for="device-image-upload" class="upload-btn">
+                                <i class="fas fa-upload"></i> Upload Device Image
+                            </label>
+                            <input type="file" id="device-image-upload" accept="image/*" hidden>
+                        </div>
+                    </div>
+                    <div class="step" id="step-2">
+                        <h3>Step 2: Define Screen Area</h3>
+                        <p>Click and drag to draw a rectangle where the screen should be positioned.</p>
+                        <div id="device-canvas-container" class="device-canvas-container">
+                            <img id="device-preview" src="" alt="Device preview">
+                            <div id="selection-area" class="selection-area hidden"></div>
+                        </div>
+                        <button id="reset-selection" class="secondary-btn">
+                            <i class="fas fa-redo"></i> Reset Selection
+                        </button>
+                    </div>
+                    <div class="step" id="step-3">
+                        <h3>Step 3: Name Your Device</h3>
+                        <p>Give your custom device a name.</p>
+                        <div class="input-group">
+                            <label for="custom-device-name">Device Name:</label>
+                            <input type="text" id="custom-device-name" placeholder="e.g., My Custom Phone">
+                        </div>
+                    </div>
+                </div>
+                <div class="step-controls">
+                    <button id="prev-step" class="secondary-btn" disabled>
+                        <i class="fas fa-arrow-left"></i> Previous
+                    </button>
+                    <button id="next-step" class="primary-btn" disabled>
+                        <i class="fas fa-arrow-right"></i> Next
+                    </button>
+                    <button id="save-custom-device" class="primary-btn hidden">
+                        <i class="fas fa-save"></i> Save Device
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/html2canvas.min.js"></script>
+    <script src="js/script.js"></script>
+</body>
+</html>
